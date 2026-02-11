@@ -50,7 +50,7 @@ else:
     
 BASE_URL = "https://api.pointstreak.com"
 HEADERS = {"apikey": API_KEY}
-SEASON_ID = 34102
+SEASON_ID = 34052
 
 # -------------------
 # API Fetch Function
@@ -102,14 +102,20 @@ def clean_batting_df(df):
     """Clean and structure batting stats DataFrame."""
     if "teamname" in df.columns:
         df["teamname"] = df["teamname"].apply(lambda x: x.get("$t") if isinstance(x, dict) else x)
+    
     df = df.drop(columns=[col for col in ["playerlinkid", "playerid", "firstname", "lastname"] if col in df.columns])
+    
     rename_map = {"playername": "PLAYER", "teamname": "TEAM", "jersey": "JERSEY", "position": "P"}
     df = df.rename(columns=rename_map)
     df.columns = [rename_map.get(col, col.upper()) for col in df.columns]
+    
+    
     numeric_cols = ["AVG", "AB", "RUNS", "HITS", "HR", "RBI", "BB", "HP", "SO", "SF", "SB", "DP", "BIB", "TRIB", "OBP", "SLG"]
     for col in numeric_cols:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
+    
+    # Reorganizing the order of the columns
     order = ["PLAYER", "JERSEY", "TEAM", "P", "AVG", "AB", "RUNS", "HITS", "HR", "RBI", "BB", "HP", "SO", "SF", "SB", "DP"]
     return df[[col for col in order if col in df.columns] + [col for col in df.columns if col not in order]]
 
@@ -121,10 +127,12 @@ def clean_pitching_df(df):
     rename_map = {"playername": "PLAYER", "teamname": "TEAM", "jersey": "JERSEY", "games": "G"}
     df = df.rename(columns=rename_map)
     df.columns = [rename_map.get(col, col.upper()) for col in df.columns]
+    
     numeric_cols = ["ERA", "G", "GS", "CG", "CGL", "IP", "HITS", "RUNS", "ER", "BB", "SO", "SV", "BSV", "WINS", "LOSSES", "BF", "SHO"]
     for col in numeric_cols:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
+    
     order = ["PLAYER", "JERSEY", "TEAM", "ERA", "G", "GS", "CG", "CGL", "IP", "HITS", "RUNS", "ER", "BB", "SO", "WINS", "LOSSES", "SV", "BSV"]
     return df[[col for col in order if col in df.columns] + [col for col in df.columns if col not in order]]
 

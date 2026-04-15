@@ -33,6 +33,106 @@ from io import BytesIO
 from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
 
+
+
+
+# -----------------------
+# PDF Generation Function
+# -----------------------
+
+def generate_pdf(df, title, subtitle, selected_cols):
+    """
+    Generate a PDF report for a single stats table.
+
+    Args:
+        df (DataFrame): The stats dataframe to render.
+        title (str): Section title (e.g. "Pitcher Season Stats").
+        subtitle (str): Subtitle line shown below title (e.g. team + player name).
+        selected_cols (list): Columns to include, respecting the multiselect.
+
+    Returns:
+        BytesIO: In-memory PDF document stream.
+    """
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(LETTER), leftMargin=24, rightMargin=24, topMargin=24, bottomMargin=24)
+    elements = []
+    styles = getSampleStyleSheet()
+
+    custom_title_style = ParagraphStyle(
+        name="CustomTitle",
+        parent=styles["Title"],
+        textColor=colors.HexColor("#000c66"),
+        fontSize=14,
+        alignment=1,
+    )
+    subtitle_style = ParagraphStyle(
+        name="SubtitleStyle",
+        parent=styles["Normal"],
+        textColor=colors.HexColor("#c62127"),
+        fontSize=9,
+        alignment=1,
+    )
+    date_style = ParagraphStyle(
+        name="DateStyle",
+        parent=styles["Normal"],
+        textColor=colors.HexColor("#000c66"),
+        fontSize=7,
+        alignment=1,
+    )
+
+    # Header image
+    if os.path.exists("WidgetHeader.png"):
+        elements.append(Image("WidgetHeader.png", width=500, height=80))
+        elements.append(Spacer(1, 12))
+
+    # Report timestamp
+    now = datetime.now(ZoneInfo("America/New_York"))
+    report_date = now.strftime("Report Date: %B %d, %Y at %I:%M %p")
+    elements.append(Paragraph(report_date, date_style))
+    elements.append(Spacer(1, 10))
+
+    # Title + subtitle
+    elements.append(Paragraph(title, custom_title_style))
+    elements.append(Spacer(1, 4))
+    elements.append(Paragraph(subtitle, subtitle_style))
+    elements.append(Spacer(1, 14))
+
+    # Build table data from selected columns only
+    display_df = df.copy()
+    data = [display_df.columns.tolist()] + [
+        [str(cell) for cell in row] for row in display_df.values.tolist()
+    ]
+
+    # Auto-scale column widths to fit landscape letter (approx 720pt usable)
+    col_count = len(selected_cols)
+    col_width = 720 / col_count
+
+    table = Table(data, repeatRows=1, colWidths=[col_width] * col_count)
+    table.setStyle(TableStyle([
+        ("BACKGROUND",    (0, 0), (-1, 0),  colors.HexColor("#0072eb")),
+        ("TEXTCOLOR",     (0, 0), (-1, 0),  colors.white),
+        ("ALIGN",         (0, 0), (-1, -1), "CENTER"),
+        ("FONTNAME",      (0, 0), (-1, 0),  "Helvetica-Bold"),
+        ("FONTNAME",      (0, 1), (-1, -1), "Helvetica"),
+        ("FONTSIZE",      (0, 0), (-1, 0),  9),
+        ("FONTSIZE",      (0, 1), (-1, -1), 8),
+        ("BOTTOMPADDING", (0, 0), (-1, 0),  8),
+        ("BOTTOMPADDING", (0, 1), (-1, -1), 6),
+        ("ROWBACKGROUNDS",(0, 1), (-1, -1), [colors.white, colors.HexColor("#eef3fb")]),
+        ("GRID",          (0, 0), (-1, -1), 0.25, colors.black),
+    ]))
+    elements.append(table)
+
+    doc.build(elements)
+    buffer.seek(0)
+    return buffer
+
+
+# Helper to build the timestamped filename
+def pdf_filename(label):
+    now = datetime.now(ZoneInfo("America/New_York"))
+    return f"{label}_{now.strftime('%Y-%m-%d_%H-%M')}.pdf"
+
 # -------------------
 # Pointstreak API Setup
 # -------------------
@@ -846,100 +946,3 @@ with tab2:
 
     else:
         st.write("No at-bat data available.")
-
-# -----------------------
-# PDF Generation Function
-# -----------------------
-
-def generate_pdf(df, title, subtitle, selected_cols):
-    """
-    Generate a PDF report for a single stats table.
-
-    Args:
-        df (DataFrame): The stats dataframe to render.
-        title (str): Section title (e.g. "Pitcher Season Stats").
-        subtitle (str): Subtitle line shown below title (e.g. team + player name).
-        selected_cols (list): Columns to include, respecting the multiselect.
-
-    Returns:
-        BytesIO: In-memory PDF document stream.
-    """
-    buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=landscape(LETTER), leftMargin=24, rightMargin=24, topMargin=24, bottomMargin=24)
-    elements = []
-    styles = getSampleStyleSheet()
-
-    custom_title_style = ParagraphStyle(
-        name="CustomTitle",
-        parent=styles["Title"],
-        textColor=colors.HexColor("#000c66"),
-        fontSize=14,
-        alignment=1,
-    )
-    subtitle_style = ParagraphStyle(
-        name="SubtitleStyle",
-        parent=styles["Normal"],
-        textColor=colors.HexColor("#c62127"),
-        fontSize=9,
-        alignment=1,
-    )
-    date_style = ParagraphStyle(
-        name="DateStyle",
-        parent=styles["Normal"],
-        textColor=colors.HexColor("#000c66"),
-        fontSize=7,
-        alignment=1,
-    )
-
-    # Header image
-    if os.path.exists("WidgetHeader.png"):
-        elements.append(Image("WidgetHeader.png", width=500, height=80))
-        elements.append(Spacer(1, 12))
-
-    # Report timestamp
-    now = datetime.now(ZoneInfo("America/New_York"))
-    report_date = now.strftime("Report Date: %B %d, %Y at %I:%M %p")
-    elements.append(Paragraph(report_date, date_style))
-    elements.append(Spacer(1, 10))
-
-    # Title + subtitle
-    elements.append(Paragraph(title, custom_title_style))
-    elements.append(Spacer(1, 4))
-    elements.append(Paragraph(subtitle, subtitle_style))
-    elements.append(Spacer(1, 14))
-
-    # Build table data from selected columns only
-    display_df = df.copy()
-    data = [display_df.columns.tolist()] + [
-        [str(cell) for cell in row] for row in display_df.values.tolist()
-    ]
-
-    # Auto-scale column widths to fit landscape letter (approx 720pt usable)
-    col_count = len(selected_cols)
-    col_width = 720 / col_count
-
-    table = Table(data, repeatRows=1, colWidths=[col_width] * col_count)
-    table.setStyle(TableStyle([
-        ("BACKGROUND",    (0, 0), (-1, 0),  colors.HexColor("#0072eb")),
-        ("TEXTCOLOR",     (0, 0), (-1, 0),  colors.white),
-        ("ALIGN",         (0, 0), (-1, -1), "CENTER"),
-        ("FONTNAME",      (0, 0), (-1, 0),  "Helvetica-Bold"),
-        ("FONTNAME",      (0, 1), (-1, -1), "Helvetica"),
-        ("FONTSIZE",      (0, 0), (-1, 0),  9),
-        ("FONTSIZE",      (0, 1), (-1, -1), 8),
-        ("BOTTOMPADDING", (0, 0), (-1, 0),  8),
-        ("BOTTOMPADDING", (0, 1), (-1, -1), 6),
-        ("ROWBACKGROUNDS",(0, 1), (-1, -1), [colors.white, colors.HexColor("#eef3fb")]),
-        ("GRID",          (0, 0), (-1, -1), 0.25, colors.black),
-    ]))
-    elements.append(table)
-
-    doc.build(elements)
-    buffer.seek(0)
-    return buffer
-
-
-# Helper to build the timestamped filename
-def pdf_filename(label):
-    now = datetime.now(ZoneInfo("America/New_York"))
-    return f"{label}_{now.strftime('%Y-%m-%d_%H-%M')}.pdf"

@@ -72,7 +72,7 @@ def fetch(endpoint, params=None):
 # -----------------------
 @st.cache_data
 def get_all_players():
-    resp = fetch("players", params={"limit": 1000})
+    resp = fetch("players", params={"limit": 1000, "season_id": SEASON_ID})
     players = resp.get("data", [])
 
     if not players:
@@ -117,6 +117,7 @@ def get_pitcher_pitches(pitcher_id):
     while True:
         resp = fetch("pitches", params={
             "pitcher_id": pitcher_id,
+            "season_id": SEASON_ID,
             "limit": limit,
             "offset": offset
         })
@@ -207,7 +208,7 @@ def compute_pitcher_velo_percentiles(pitches_df):
 # Get ALL games
 # -----------------------
 def get_all_games():
-    resp = fetch("games", params={"limit": 1000})
+    resp = fetch("games", params={"limit": 1000, "season_id": SEASON_ID})
     return pd.DataFrame(resp.get("data", []))
 
 
@@ -589,6 +590,19 @@ with tab1:
             hide_index=True
         )
 
+        st.download_button(
+            label="🖨️ Download PDF",
+            data=generate_pdf(
+                df=season_stats.reset_index(drop=True),
+                title="Pitcher Season Stats",
+                subtitle=f"Team: {selected_team}",
+                selected_cols=selected_columns,
+            ),
+            file_name=pdf_filename("pitcher_season"),
+            mime="application/pdf",
+            key="pdf_pitcher_season",
+        )
+
     # -----------------------
     # Individual pitcher: game log with rolling hot/cold
     # -----------------------
@@ -636,6 +650,19 @@ with tab1:
             display_df[selected_columns].reset_index(drop=True),
             use_container_width=True,
             hide_index=True
+        )
+
+        st.download_button(
+            label="🖨️ Download PDF",
+            data=generate_pdf(
+                df=season_stats.reset_index(drop=True),
+                title="Pitcher Game Log",
+                subtitle=f"Team: {selected_team} | Pitcher: {selected_pitcher}",
+                selected_cols=selected_columns,
+            ),
+            file_name=pdf_filename("pitcher_game_log"),
+            mime="application/pdf",
+            key="pdf_pitcher_game_log",
         )
 
 
@@ -712,8 +739,8 @@ with tab2:
                     key="hitter_game_hot_cold_stats"
                 )
 
-                filtered_config = {k: v for k, v in pitcher_stat_config.items() if k in hot_cold_stats}
-                game_log = apply_hot_cold_labels(hitter_game_stat_config, filtered_config)
+                filtered_config = {k: v for k, v in hitter_game_stat_config.items() if k in hot_cold_stats}
+                game_log = apply_hot_cold_labels(game_log, filtered_config)
 
                 st.subheader(f"{selected_hitter} Game By Game Stats")
                 st.dataframe(
@@ -721,6 +748,20 @@ with tab2:
                     use_container_width=True,
                     hide_index=True
                 )
+
+                st.download_button(
+                    label="🖨️ Download PDF",
+                    data=generate_pdf(
+                        df=game_log.reset_index(drop=True),
+                        title="Hitter Game Log",
+                        subtitle=f"Team: {selected_team}  |  Hitter: {selected_hitter}",
+                        selected_cols=selected_hitter_cols,
+                    ),
+                    file_name=pdf_filename("hitter_game_log"),
+                    mime="application/pdf",
+                    key="pdf_hitter_game_log",
+                )
+
             else:
                 st.write("No game data available for this hitter")
 
@@ -779,6 +820,19 @@ with tab2:
                 hide_index=True
             )
 
+            st.download_button(
+                label="🖨️ Download PDF",
+                data=generate_pdf(
+                    df=season_stats.reset_index(drop=True),
+                    title="Hitter Season Stats",
+                    subtitle=f"Team: {selected_team}",
+                    selected_cols=selected_columns,
+                ),
+                file_name=pdf_filename("hitter_season"),
+                mime="application/pdf",
+                key="pdf_hitter_season",
+            )
+
     else:
         st.write("No at-bat data available.")
 
@@ -786,98 +840,95 @@ with tab2:
 # PDF Generation Function
 # -----------------------
 
+def generate_pdf(df, title, subtitle, selected_cols):
+    """
+    Generate a PDF report for a single stats table.
 
-# def generate_pdf(batting_df, fielding_df, pitching_df, batting_filters, fielding_filters, pitching_filters):
-#     """
-#     Generate a PDF report of the filtered data tables.
+    Args:
+        df (DataFrame): The stats dataframe to render.
+        title (str): Section title (e.g. "Pitcher Season Stats").
+        subtitle (str): Subtitle line shown below title (e.g. team + player name).
+        selected_cols (list): Columns to include, respecting the multiselect.
 
-#     Args:
-#         batting_df (DataFrame), fielding_df (DataFrame), pitching_df (DataFrame): Cleaned stat data.
-#         batting_filters, fielding_filters, pitching_filters: Tuple of (team, player, sort) for display.
+    Returns:
+        BytesIO: In-memory PDF document stream.
+    """
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(LETTER), leftMargin=24, rightMargin=24, topMargin=24, bottomMargin=24)
+    elements = []
+    styles = getSampleStyleSheet()
 
-#     Returns:
-#         BytesIO: In-memory PDF document stream.
-#     """
-#     buffer = BytesIO()
-#     doc = SimpleDocTemplate(buffer, pagesize=landscape(LETTER))
-#     elements = []
-#     styles = getSampleStyleSheet()
-#     custom_title_style = ParagraphStyle(name="CustomTitle", parent=styles['Title'], textColor=colors.HexColor("#000c66"), fontSize=14, alignment=1)
-#     filter_style = ParagraphStyle(name="FilterStyle", parent=styles['Normal'], textColor=colors.HexColor("#c62127"), fontSize=8, alignment=1)
-#     date_style = ParagraphStyle(name="DateStyle", parent=styles['Normal'], textColor=colors.HexColor("#000c66"), fontSize=7, alignment=1)
+    custom_title_style = ParagraphStyle(
+        name="CustomTitle",
+        parent=styles["Title"],
+        textColor=colors.HexColor("#000c66"),
+        fontSize=14,
+        alignment=1,
+    )
+    subtitle_style = ParagraphStyle(
+        name="SubtitleStyle",
+        parent=styles["Normal"],
+        textColor=colors.HexColor("#c62127"),
+        fontSize=9,
+        alignment=1,
+    )
+    date_style = ParagraphStyle(
+        name="DateStyle",
+        parent=styles["Normal"],
+        textColor=colors.HexColor("#000c66"),
+        fontSize=7,
+        alignment=1,
+    )
 
-#     # Add header
-#     if os.path.exists("WidgetHeader.png"):
-#         elements.append(Image("WidgetHeader.png", width=500, height=80))
-#         elements.append(Spacer(1, 12))
+    # Header image
+    if os.path.exists("WidgetHeader.png"):
+        elements.append(Image("WidgetHeader.png", width=500, height=80))
+        elements.append(Spacer(1, 12))
 
-#     # Add current date and time
-#     now = datetime.now(ZoneInfo("America/New_York"))
-#     report_date = now.strftime("Report Date: %B %d, %Y at %I:%M %p")
-#     elements.append(Paragraph(report_date, date_style))
-#     elements.append(Spacer(1, 24))
+    # Report timestamp
+    now = datetime.now(ZoneInfo("America/New_York"))
+    report_date = now.strftime("Report Date: %B %d, %Y at %I:%M %p")
+    elements.append(Paragraph(report_date, date_style))
+    elements.append(Spacer(1, 10))
 
-#     # Helper function to add a table section
-#     def add_title_and_table(title, df, filters):
-#         team, player, sort = filters
-#         elements.append(Paragraph(title, custom_title_style))
-#         elements.append(Spacer(1, 6))
-#         filter_text = f"Filters: Team = {team}, Player = {player}, Sort = {sort}"
-#         if title.startswith("Batting") and batting_position:
-#             filter_text += f", Position = {batting_position}"
-#         elif title.startswith("Fielding") and fielding_position:
-#             filter_text += f", Position = {fielding_position}"
-#         elements.append(Paragraph(filter_text, filter_style))
-#         elements.append(Spacer(1, 12))
-#         data = [df.columns.tolist()] + df.values.tolist()
-#         data = [[str(cell) for cell in row] for row in data]
-#         table = Table(data, repeatRows=1)
-#         table.setStyle(TableStyle([
-#             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#0072eb")),
-#             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-#             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-#             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-#             ('FONTNAME', (1, 1), (-1, -1), 'Helvetica'),
-#             ('FONTSIZE', (0, 0), (-1, 0), 9),     # header row
-#             ('FONTSIZE', (1, 1), (-1, -1), 8),    # table body
-#             ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
-#             ('BOTTOMPADDING', (1, 1), (-1, -1), 6),
-#             ('GRID', (0, 0), (-1, -1), 0.25, colors.black),
-#         ]))
-#         elements.append(table)
-#         elements.append(Spacer(1, 24))
+    # Title + subtitle
+    elements.append(Paragraph(title, custom_title_style))
+    elements.append(Spacer(1, 4))
+    elements.append(Paragraph(subtitle, subtitle_style))
+    elements.append(Spacer(1, 14))
 
-#     add_title_and_table("Batting Stats", batting_df, batting_filters)
-#     add_title_and_table("Fielding Stats", fielding_df, fielding_filters)
-#     add_title_and_table("Pitching Stats", pitching_df, pitching_filters)
+    # Build table data from selected columns only
+    display_df = df[selected_cols].copy()
+    data = [display_df.columns.tolist()] + [
+        [str(cell) for cell in row] for row in display_df.values.tolist()
+    ]
 
-#     doc.build(elements)
-#     buffer.seek(0)
-#     return buffer
+    # Auto-scale column widths to fit landscape letter (approx 720pt usable)
+    col_count = len(selected_cols)
+    col_width = 720 / col_count
 
-# # --------------------
-# # Download PDF Report
-# # --------------------
+    table = Table(data, repeatRows=1, colWidths=[col_width] * col_count)
+    table.setStyle(TableStyle([
+        ("BACKGROUND",    (0, 0), (-1, 0),  colors.HexColor("#0072eb")),
+        ("TEXTCOLOR",     (0, 0), (-1, 0),  colors.white),
+        ("ALIGN",         (0, 0), (-1, -1), "CENTER"),
+        ("FONTNAME",      (0, 0), (-1, 0),  "Helvetica-Bold"),
+        ("FONTNAME",      (0, 1), (-1, -1), "Helvetica"),
+        ("FONTSIZE",      (0, 0), (-1, 0),  9),
+        ("FONTSIZE",      (0, 1), (-1, -1), 8),
+        ("BOTTOMPADDING", (0, 0), (-1, 0),  8),
+        ("BOTTOMPADDING", (0, 1), (-1, -1), 6),
+        ("ROWBACKGROUNDS",(0, 1), (-1, -1), [colors.white, colors.HexColor("#eef3fb")]),
+        ("GRID",          (0, 0), (-1, -1), 0.25, colors.black),
+    ]))
+    elements.append(table)
 
-# now = datetime.now(ZoneInfo("America/New_York"))
-# now_str = now.strftime("%Y-%m-%d_%H-%M")
+    doc.build(elements)
+    buffer.seek(0)
+    return buffer
 
-# st.download_button(
-#     label="🖨️ Generate and Download PDF",
-#     data=generate_pdf(
-#         batting_filtered, fielding_filtered, pitching_filtered,
-#         batting_filters=(batting_team, batting_player, batting_sort),
-#         fielding_filters=(fielding_team, fielding_player, fielding_sort),
-#         pitching_filters=(pitching_team, pitching_player, pitching_sort)
-#     ),
-#     file_name=f"stats_report_{now_str}.pdf",
-#     mime="application/pdf"
-# )
 
-# # ---------------------
-# # Display Filtered Tables
-# # ---------------------
-
-# col1.dataframe(batting_filtered, use_container_width=True)
-# col2.dataframe(fielding_filtered, use_container_width=True)
-# col3.dataframe(pitching_filtered, use_container_width=True)
+# Helper to build the timestamped filename
+def pdf_filename(label):
+    now = datetime.now(ZoneInfo("America/New_York"))
+    return f"{label}_{now.strftime('%Y-%m-%d_%H-%M')}.pdf"

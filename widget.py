@@ -717,7 +717,6 @@ with tab1:
         )
 
         pitcher_game_stat_config = {stat: (f"{stat}_PERCENTILE", reverse) for stat, reverse in pitcher_game_stat_list}
-        display_df = apply_hot_cold_labels(display_df, pitcher_game_stat_config)
 
         allowed_cols = ["DATE", "OPPONENT", "LOCATION", "NP", "MV", "MAX_SPEED", "IP", "H", "R", "HR", "BB", "SO"]
         default_cols = ["DATE", "OPPONENT", "LOCATION", "NP", "MV", "IP", "H", "R", "HR", "BB", "SO"]
@@ -731,8 +730,7 @@ with tab1:
         )
 
         filtered_config = {k: v for k, v in pitcher_game_stat_config.items() if k in hot_cold_stats}
-        season_stats = apply_hot_cold_labels(display_df, filtered_config)
-
+        display_df = apply_hot_cold_labels(display_df, pitcher_game_stat_config)
         pdf_df = display_df[selected_columns].reset_index(drop=True)
 
         st.subheader(f"{selected_pitcher} Game By Game Stats")
@@ -832,7 +830,7 @@ with tab2:
                 filtered_config = {k: v for k, v in hitter_game_stat_config.items() if k in hot_cold_stats}
                 game_log = apply_hot_cold_labels(game_log, filtered_config)
 
-                pdf_df = game_log[selected_columns].reset_index(drop=True)
+                pdf_df = game_log[selected_hitter_cols].reset_index(drop=True)
 
 
                 st.subheader(f"{selected_hitter} Game By Game Stats")

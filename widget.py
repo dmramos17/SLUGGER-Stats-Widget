@@ -48,10 +48,6 @@ def generate_pdf(df, title, subtitle, selected_cols):
     subtitle_style = ParagraphStyle(name="SubtitleStyle", parent=styles["Normal"], textColor=colors.HexColor("#c62127"), fontSize=9, alignment=1)
     date_style = ParagraphStyle(name="DateStyle", parent=styles["Normal"], textColor=colors.HexColor("#000c66"), fontSize=7, alignment=1)
 
-    if os.path.exists("WidgetHeader.png"):
-        elements.append(Image("WidgetHeader.png", width=500, height=80))
-        elements.append(Spacer(1, 12))
-
     now = datetime.now(ZoneInfo("America/New_York"))
     elements.append(Paragraph(now.strftime("Report Date: %B %d, %Y at %I:%M %p"), date_style))
     elements.append(Spacer(1, 10))

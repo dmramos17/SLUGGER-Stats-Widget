@@ -117,6 +117,10 @@ def generate_pdf(df, title, subtitle, selected_cols):
     buffer.seek(0)
     return buffer
 
+def pdf_filename(label):
+    now = datetime.now(ZoneInfo("America/New_York"))
+    return f"{label}_{now.strftime('%Y-%m-%d_%H-%M')}.pdf"
+
 # -------------------
 # Pointstreak API Setup
 # -------------------

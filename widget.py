@@ -98,7 +98,7 @@ def generate_pdf(df, title, subtitle, selected_cols):
     elements.append(Spacer(1, 14))
 
     # Build table data from selected columns only
-    display_df = df.copy()
+    display_df = df[selected_cols].copy()
     data = [display_df.columns.tolist()] + [
         [str(cell) for cell in row] for row in display_df.values.tolist()
     ]

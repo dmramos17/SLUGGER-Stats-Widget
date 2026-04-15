@@ -34,81 +34,65 @@ from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
 
 
-
-
-# -----------------------
-# PDF Generation Function
-# -----------------------
+# -------------------
+# PDF Generation
+# -------------------
 
 def generate_pdf(df, title, subtitle, selected_cols):
-    """
-    Generate a PDF report for a single stats table.
-
-    Args:
-        df (DataFrame): The stats dataframe to render.
-        title (str): Section title (e.g. "Pitcher Season Stats").
-        subtitle (str): Subtitle line shown below title (e.g. team + player name).
-        selected_cols (list): Columns to include, respecting the multiselect.
-
-    Returns:
-        BytesIO: In-memory PDF document stream.
-    """
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=landscape(LETTER), leftMargin=24, rightMargin=24, topMargin=24, bottomMargin=24)
     elements = []
     styles = getSampleStyleSheet()
 
-    custom_title_style = ParagraphStyle(
-        name="CustomTitle",
-        parent=styles["Title"],
-        textColor=colors.HexColor("#000c66"),
-        fontSize=14,
-        alignment=1,
-    )
-    subtitle_style = ParagraphStyle(
-        name="SubtitleStyle",
-        parent=styles["Normal"],
-        textColor=colors.HexColor("#c62127"),
-        fontSize=9,
-        alignment=1,
-    )
-    date_style = ParagraphStyle(
-        name="DateStyle",
-        parent=styles["Normal"],
-        textColor=colors.HexColor("#000c66"),
-        fontSize=7,
-        alignment=1,
-    )
+    custom_title_style = ParagraphStyle(name="CustomTitle", parent=styles["Title"], textColor=colors.HexColor("#000c66"), fontSize=14, alignment=1)
+    subtitle_style = ParagraphStyle(name="SubtitleStyle", parent=styles["Normal"], textColor=colors.HexColor("#c62127"), fontSize=9, alignment=1)
+    date_style = ParagraphStyle(name="DateStyle", parent=styles["Normal"], textColor=colors.HexColor("#000c66"), fontSize=7, alignment=1)
 
-    # Header image
     if os.path.exists("WidgetHeader.png"):
         elements.append(Image("WidgetHeader.png", width=500, height=80))
         elements.append(Spacer(1, 12))
 
-    # Report timestamp
     now = datetime.now(ZoneInfo("America/New_York"))
-    report_date = now.strftime("Report Date: %B %d, %Y at %I:%M %p")
-    elements.append(Paragraph(report_date, date_style))
+    elements.append(Paragraph(now.strftime("Report Date: %B %d, %Y at %I:%M %p"), date_style))
     elements.append(Spacer(1, 10))
-
-    # Title + subtitle
     elements.append(Paragraph(title, custom_title_style))
     elements.append(Spacer(1, 4))
     elements.append(Paragraph(subtitle, subtitle_style))
     elements.append(Spacer(1, 14))
 
-    # Build table data from selected columns only
     display_df = df[selected_cols].copy()
-    data = [display_df.columns.tolist()] + [
-        [str(cell) for cell in row] for row in display_df.values.tolist()
-    ]
 
-    # Auto-scale column widths to fit landscape letter (approx 720pt usable)
+    # Build cell color map before stripping emojis
+    HOT_COLOR = colors.HexColor("#ffe0e0")   # light red
+    COLD_COLOR = colors.HexColor("#ddeeff")  # light blue
+
+    # data[0] = header row, data[1+] = values
+    raw_data = display_df.values.tolist()
+    cell_colors = {}  # (row, col) -> color
+
+    cleaned_data = []
+    for row_i, row in enumerate(raw_data):
+        cleaned_row = []
+        for col_i, cell in enumerate(row):
+            cell_str = str(cell)
+            if cell_str.startswith("🔥"):
+                cell_colors[(row_i + 1, col_i)] = HOT_COLOR   # +1 for header offset
+                cell_str = cell_str.replace("🔥 ", "").replace("🔥", "")
+            elif cell_str.startswith("🧊"):
+                cell_colors[(row_i + 1, col_i)] = COLD_COLOR
+                cell_str = cell_str.replace("🧊 ", "").replace("🧊", "")
+            cleaned_row.append(cell_str)
+        cleaned_data.append(cleaned_row)
+
+    data = [display_df.columns.tolist()] + cleaned_data
+
     col_count = len(selected_cols)
     col_width = 720 / col_count
 
     table = Table(data, repeatRows=1, colWidths=[col_width] * col_count)
-    table.setStyle(TableStyle([
+
+    # Base style
+    table_style = [
         ("BACKGROUND",    (0, 0), (-1, 0),  colors.HexColor("#0072eb")),
         ("TEXTCOLOR",     (0, 0), (-1, 0),  colors.white),
         ("ALIGN",         (0, 0), (-1, -1), "CENTER"),
@@ -120,18 +104,18 @@ def generate_pdf(df, title, subtitle, selected_cols):
         ("BOTTOMPADDING", (0, 1), (-1, -1), 6),
         ("ROWBACKGROUNDS",(0, 1), (-1, -1), [colors.white, colors.HexColor("#eef3fb")]),
         ("GRID",          (0, 0), (-1, -1), 0.25, colors.black),
-    ]))
+    ]
+
+    # Apply hot/cold cell colors on top of row stripes
+    for (row_i, col_i), color in cell_colors.items():
+        table_style.append(("BACKGROUND", (col_i, row_i), (col_i, row_i), color))
+
+    table.setStyle(TableStyle(table_style))
     elements.append(table)
 
     doc.build(elements)
     buffer.seek(0)
     return buffer
-
-
-# Helper to build the timestamped filename
-def pdf_filename(label):
-    now = datetime.now(ZoneInfo("America/New_York"))
-    return f"{label}_{now.strftime('%Y-%m-%d_%H-%M')}.pdf"
 
 # -------------------
 # Pointstreak API Setup

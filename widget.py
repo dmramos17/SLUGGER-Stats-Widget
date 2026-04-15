@@ -63,8 +63,8 @@ def generate_pdf(df, title, subtitle, selected_cols):
     display_df = df[selected_cols].copy()
 
     # Build cell color map before stripping emojis
-    HOT_COLOR = colors.HexColor("#ffe0e0")   # light red
-    COLD_COLOR = colors.HexColor("#ddeeff")  # light blue
+    HOT_COLOR = colors.HexColor("#d64e4e")   # light red
+    COLD_COLOR = colors.HexColor("#316daa")  # light blue
 
     # data[0] = header row, data[1+] = values
     raw_data = display_df.values.tolist()

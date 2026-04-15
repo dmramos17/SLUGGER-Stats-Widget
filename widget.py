@@ -582,10 +582,14 @@ with tab1:
 
         filtered_config = {k: v for k, v in pitcher_stat_config.items() if k in hot_cold_stats}
         season_stats = apply_hot_cold_labels(season_stats, filtered_config)
+
+        pdf_df = season_stats[selected_columns].reset_index(drop=True)
+
         
         st.subheader("Pitcher's Season Stats")
+        
         st.dataframe(
-            season_stats[selected_columns].reset_index(drop=True),
+            pdf_df,
             use_container_width=True,
             hide_index=True
         )
@@ -593,7 +597,7 @@ with tab1:
         st.download_button(
             label="🖨️ Download PDF",
             data=generate_pdf(
-                df=season_stats.reset_index(drop=True),
+                df=pdf_df,
                 title="Pitcher Season Stats",
                 subtitle=f"Team: {selected_team}",
                 selected_cols=selected_columns,
@@ -645,9 +649,11 @@ with tab1:
         filtered_config = {k: v for k, v in pitcher_game_stat_config.items() if k in hot_cold_stats}
         season_stats = apply_hot_cold_labels(display_df, filtered_config)
 
+        pdf_df = display_df[selected_columns].reset_index(drop=True)
+
         st.subheader(f"{selected_pitcher} Game By Game Stats")
         st.dataframe(
-            display_df[selected_columns].reset_index(drop=True),
+            pdf_df,
             use_container_width=True,
             hide_index=True
         )
@@ -655,7 +661,7 @@ with tab1:
         st.download_button(
             label="🖨️ Download PDF",
             data=generate_pdf(
-                df=season_stats.reset_index(drop=True),
+                df=pdf_df,
                 title="Pitcher Game Log",
                 subtitle=f"Team: {selected_team} | Pitcher: {selected_pitcher}",
                 selected_cols=selected_columns,
@@ -742,9 +748,12 @@ with tab2:
                 filtered_config = {k: v for k, v in hitter_game_stat_config.items() if k in hot_cold_stats}
                 game_log = apply_hot_cold_labels(game_log, filtered_config)
 
+                pdf_df = game_log[selected_columns].reset_index(drop=True)
+
+
                 st.subheader(f"{selected_hitter} Game By Game Stats")
                 st.dataframe(
-                    game_log[selected_hitter_cols].reset_index(drop=True),
+                    pdf_df,
                     use_container_width=True,
                     hide_index=True
                 )
@@ -752,7 +761,7 @@ with tab2:
                 st.download_button(
                     label="🖨️ Download PDF",
                     data=generate_pdf(
-                        df=game_log.reset_index(drop=True),
+                        df=pdf_df,
                         title="Hitter Game Log",
                         subtitle=f"Team: {selected_team}  |  Hitter: {selected_hitter}",
                         selected_cols=selected_hitter_cols,
@@ -813,9 +822,11 @@ with tab2:
             filtered_config = {k: v for k, v in hitter_season_stat_config.items() if k in hot_cold_stats}
             season_stats = apply_hot_cold_labels(season_stats, filtered_config)
 
+            pdf_df = season_stats[selected_columns].reset_index(drop=True)
+
             st.subheader("Hitter's Season Stats")
             st.dataframe(
-                season_stats[selected_columns].reset_index(drop=True),
+                pdf_df,
                 use_container_width=True,
                 hide_index=True
             )
@@ -823,7 +834,7 @@ with tab2:
             st.download_button(
                 label="🖨️ Download PDF",
                 data=generate_pdf(
-                    df=season_stats.reset_index(drop=True),
+                    df=pdf_df,
                     title="Hitter Season Stats",
                     subtitle=f"Team: {selected_team}",
                     selected_cols=selected_columns,
@@ -898,7 +909,7 @@ def generate_pdf(df, title, subtitle, selected_cols):
     elements.append(Spacer(1, 14))
 
     # Build table data from selected columns only
-    display_df = df[selected_cols].copy()
+    display_df = df.copy()
     data = [display_df.columns.tolist()] + [
         [str(cell) for cell in row] for row in display_df.values.tolist()
     ]

@@ -731,6 +731,9 @@ with tab1:
 
         filtered_config = {k: v for k, v in pitcher_game_stat_config.items() if k in hot_cold_stats}
         display_df = apply_hot_cold_labels(display_df, filtered_config)
+        for col in allowed_cols:
+                    if col not in game_log.columns:
+                        game_log[col] = None
         pdf_df = display_df[selected_columns].reset_index(drop=True)
 
         st.subheader(f"{selected_pitcher} Game By Game Stats")
@@ -818,6 +821,10 @@ with tab2:
 
                 allowed_cols = ["DATE", "OPPONENT", "LOCATION", "AB", "H", "HR", "BB", "SO", "HBP", "AVG", "OBP", "SLG", "OPS"]
                 default_cols = ["DATE", "OPPONENT", "LOCATION", "AB", "H", "HR", "BB", "SO", "AVG", "OBP", "SLG", "OPS"]
+                
+                for col in allowed_cols:
+                    if col not in game_log.columns:
+                        game_log[col] = None
                 selected_hitter_cols = st.multiselect("Select stats to display", options=allowed_cols, default=default_cols, key="hitter_game_log_cols")
 
                 hot_cold_stats = st.multiselect(

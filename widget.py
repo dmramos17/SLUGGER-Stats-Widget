@@ -732,8 +732,8 @@ with tab1:
         filtered_config = {k: v for k, v in pitcher_game_stat_config.items() if k in hot_cold_stats}
         display_df = apply_hot_cold_labels(display_df, filtered_config)
         for col in allowed_cols:
-                    if col not in game_log.columns:
-                        game_log[col] = None
+                    if col not in display_df.columns:
+                        display_df[col] = None
         pdf_df = display_df[selected_columns].reset_index(drop=True)
 
         st.subheader(f"{selected_pitcher} Game By Game Stats")

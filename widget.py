@@ -108,6 +108,21 @@ def generate_pdf(df, title, subtitle, selected_cols):
 
     table.setStyle(TableStyle(table_style))
     elements.append(table)
+    
+    legend_style = ParagraphStyle(
+        name="LegendStyle",
+        parent=styles["Normal"],
+        fontSize=8,
+        alignment=1
+    )
+
+    elements.append(Spacer(1,8))
+    elements.append(
+        Paragraph(
+            "Color Key: Red = Player is in the top 25th percentile over the last 7 games &nbsp;&nbsp;&nbsp; Blue = Player is in the bottom 25th percentile over the last 7 games",
+            legend_style
+        )
+    )
 
     doc.build(elements)
     buffer.seek(0)
@@ -493,7 +508,7 @@ def hot_cold_label(val, pct, reverse=False):
 # -----------------------
 # Compute rolling stat percentiles (last N games)
 # -----------------------
-def compute_rolling_percentiles(df, group_col, stat, pct_name, reverse=False, window=5):
+def compute_rolling_percentiles(df, group_col, stat, pct_name, reverse=False, window=7):
     df = df.copy().sort_values("DATE")
     last_n = (
         df.groupby(group_col, group_keys=False)
@@ -677,6 +692,7 @@ with tab1:
             use_container_width=True,
             hide_index=True
         )
+        st.caption("🔥 = Top 25th Percentile Over Last 7 Games   |   🧊 = Bottom 25th Percentile Over Last 7 Games")
 
         st.download_button(
             label="🖨️ Download PDF",
@@ -713,7 +729,7 @@ with tab1:
                 stat=stat,
                 pct_name=f"{stat}_PERCENTILE",
                 reverse=reverse,
-                window=5
+                window=7
         )
 
         pitcher_game_stat_config = {stat: (f"{stat}_PERCENTILE", reverse) for stat, reverse in pitcher_game_stat_list}
@@ -742,6 +758,8 @@ with tab1:
             use_container_width=True,
             hide_index=True
         )
+        st.caption("🔥 = Top 25th Percentile Over Last 7 Games   |   🧊 = Bottom 25th Percentile Over Last 7 Games")
+
 
         st.download_button(
             label="🖨️ Download PDF",
@@ -814,7 +832,7 @@ with tab2:
                         stat=stat,
                         pct_name=f"{stat}_PERCENTILE",
                         reverse=reverse,
-                                window=5
+                                window=7
                 )
 
                 hitter_game_stat_config = {stat: (f"{stat}_PERCENTILE", reverse) for stat, reverse in hitter_game_stat_list}
@@ -845,6 +863,8 @@ with tab2:
                     use_container_width=True,
                     hide_index=True
                 )
+                st.caption("🔥 = Top 25th Percentile Over Last 7 Games   |   🧊 = Bottom 25th Percentile Over Last 7 Games")
+
 
                 st.download_button(
                     label="🖨️ Download PDF",
@@ -918,6 +938,8 @@ with tab2:
                 use_container_width=True,
                 hide_index=True
             )
+            st.caption("🔥 = Top 25th Percentile Over Last 7 Games   |   🧊 = Bottom 25th Percentile Over Last 7 Games")
+
 
             st.download_button(
                 label="🖨️ Download PDF",

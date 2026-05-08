@@ -2,11 +2,11 @@
 Baseball Performance Widget
 ---------------------------
 This Streamlit app pulls player statistics from the Pointstreak API for a given baseball season and displays
-batting, fielding, and pitching data with filtering capabilities. The user can generate and download a PDF
-report summarizing the top filtered results.
+batting and pitching data with filtering capabilities. The user can generate and download a PDF
+report summarizing the filtered results.
 
 Main Features:
-- Interactive UI with team/player/sort filters for batting, fielding, and pitching.
+- Interactive UI with team/player/sort filters for batting and pitching.
 - Pulls and cleans data from Pointstreak's public API.
 - Displays data tables using Streamlit and generates a stylized PDF report.
 - Handles time zones and ensures report filenames are timestamped appropriately.
@@ -133,7 +133,7 @@ def pdf_filename(label):
     return f"{label}_{now.strftime('%Y-%m-%d_%H-%M')}.pdf"
 
 # -------------------
-# Pointstreak API Setup
+# Pointstreak API 
 # -------------------
 
 load_dotenv()
@@ -149,7 +149,7 @@ HEADERS = {"x-api-key": API_KEY}
 SEASON_ID = 34052
 
 # -------------------
-# API Fetch Function
+# Fetch Function
 # -------------------
 
 def fetch(endpoint, params=None):
@@ -304,7 +304,7 @@ def compute_pitcher_velo_percentiles(pitches_df):
 
 
 # -----------------------
-# Get ALL games
+# Get all games
 # -----------------------
 def get_all_games():
     resp = fetch("games", params={"limit": 1000, "season_id": SEASON_ID})
@@ -506,7 +506,7 @@ def hot_cold_label(val, pct, reverse=False):
 
 
 # -----------------------
-# Compute rolling stat percentiles (last N games)
+# Compute rolling stat percentiles (last 7 games)
 # -----------------------
 def compute_rolling_percentiles(df, group_col, stat, pct_name, reverse=False, window=7):
     df = df.copy().sort_values("DATE")

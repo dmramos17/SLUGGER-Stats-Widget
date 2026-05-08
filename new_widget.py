@@ -131,17 +131,11 @@ def pdf_filename(label):
 # iScore API Setup
 # -------------------
 
-if os.path.exists(".env"):
-    load_dotenv()
-    API_KEY = os.getenv("API_KEY")
-else:
-    API_KEY = st.secrets.get("API_KEY", "")
-
 BASE_URL = "https://api.microservices.iscoresports.com/api"
 
 # ── Set your league and season GUIDs here ──────────────────────────────────────
-LEAGUE_GUID = "df9fb9cc-0fdb-4b79-8a3c-ad5d7b415a56"
-SEASON_GUID = "9843025b-3dd7-4b1b-8776-a6b53a3bdb7a"
+LEAGUE_GUID = os.getenv("LEAGUE_GUID")
+SEASON_GUID = os.getenv("SEASON_GUID")
 # ───────────────────────────────────────────────────────────────────────────────
 
 HEADERS = {"Content-Type": "application/json"}

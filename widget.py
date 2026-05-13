@@ -255,7 +255,10 @@ def get_team_stats_aggregated(team_guid, players_df):
                     "BB9":  round(r.get("BB9",  0), 2),
                 })
 
-    return pd.DataFrame(batting_rows), pd.DataFrame(pitching_rows)
+    batting_df = pd.DataFrame(batting_rows).drop_duplicates()
+    pitching_df = pd.DataFrame(pitching_rows).drop_duplicates()
+    
+    return batting_df, pitching_df
 
 def hot_cold_label(val, pct, reverse=False):
     if pd.isna(pct):

@@ -57,6 +57,6 @@ Because of this, the widget will need to expand to support fielders by:
 - creating season-level and game-level fielding stat tables
 - integrating fielding metrics into the existing filtering and PDF export systems
 
-Additionally, the existing fetch functions (such as get_pitcher_pitches() and get_hitter_atbats()) and stat aggregation functions will need to be updated to work with the appropriate iScore API endpoints and response structures.
+As for the iScore migration, the widget displays season level pitching and hitting statistics. I have been unable to work successfully with the leaderboard endpoints, which I was going to use for the hot/cold indicators and the percentile rankings. I have also been unable to work successfully with the GET Games Played by a Player to see whether the widget can display game-level statistics. 
 
 If iScore can accurately track when multiple pitchers pitch in one game and can differentiate the pitcher's stats, then implementing the lefty/righty splits would be a good addition to the widget as well. 

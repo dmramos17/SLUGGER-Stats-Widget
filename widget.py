@@ -285,6 +285,8 @@ selected_team = st.selectbox("Select a Team", sorted(teams_df["TEAM"].dropna().u
 team_guid = teams_df[teams_df["TEAM"] == selected_team].iloc[0]["team_guid"]
 
 players_df = get_team_players(team_guid)
+st.subheader("Player GUIDs (for testing)")
+st.dataframe(players_df[["PLAYER", "player_guid"]])
 batting_df, pitching_df = get_team_stats_aggregated(team_guid, players_df)
 
 tab1, tab2 = st.tabs(["Pitchers", "Hitters"])

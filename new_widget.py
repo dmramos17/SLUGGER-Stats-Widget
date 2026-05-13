@@ -116,6 +116,8 @@ def pdf_filename(prefix):
     return f"{prefix}_{timestamp}.pdf"
 
 load_dotenv()
+st.write("LEAGUE_GUID:", LEAGUE_GUID)
+st.write("SEASON_GUID:", SEASON_GUID)
 
 BASE_URL = "https://api.microservices.iscoresports.com/api"
 LEAGUE_GUID = os.getenv("LEAGUE_GUID")

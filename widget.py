@@ -115,9 +115,10 @@ def pdf_filename(prefix):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     return f"{prefix}_{timestamp}.pdf"
 
-load_dotenv()
+
 
 BASE_URL = "https://api.microservices.iscoresports.com/api"
+load_dotenv()
 LEAGUE_GUID = os.getenv("LEAGUE_GUID")
 SEASON_GUID = os.getenv("SEASON_GUID")
 HEADERS = {"Content-Type": "application/json"}
@@ -273,7 +274,7 @@ def hot_cold_label(val, pct, reverse=False):
 
 
 
-st.title("ALPB Player Stats Test")
+st.title("ALPB Player Stats")
 
 teams_df = get_league_teams()
 if teams_df.empty:

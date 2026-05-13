@@ -275,6 +275,7 @@ def hot_cold_label(val, pct, reverse=False):
 
 
 st.title("ALPB Player Stats")
+st.text("NOTE: The widget is in the process of being migrated to a new API")
 
 teams_df = get_league_teams()
 if teams_df.empty:
